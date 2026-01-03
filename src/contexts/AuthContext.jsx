@@ -4,17 +4,27 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
             try {
-                setUser(JSON.parse(storedUser));
+                const parsedUser = JSON.parse(storedUser);
+                
+                if (!parsedUser.user_id) {
+                    console.warn('Stored user data is missing user_id, clearing...');
+                    localStorage.removeItem('user');
+                    setUser(null);
+                } else {
+                    setUser(parsedUser);
+                }
             } catch (e) {
                 console.error('Failed to parse stored user:', e);
                 localStorage.removeItem('user');
             }
         }
+        setIsLoading(false);
     }, []);
 
     const login = (userData) => {
@@ -32,7 +42,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAdmin }}>
+        <AuthContext.Provider value={{ user, login, logout, isAdmin, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

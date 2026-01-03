@@ -2,7 +2,6 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8000';
 
-// Configure axios defaults for CORS
 axios.defaults.headers.common['Content-Type'] = 'application/json';
 axios.defaults.headers.common['Accept'] = 'application/json';
 
@@ -11,9 +10,9 @@ export const createTask = async (service, route, params, method = 'POST') => {
         service,
         route,
         params,
-        method: method.toUpperCase(), // Ensure uppercase (GET, POST, etc.)
+        method: method.toUpperCase(),
     });
-    return response.data; // returns task_id
+    return response.data;
 };
 
 export const getTaskStatus = async (taskId) => {
