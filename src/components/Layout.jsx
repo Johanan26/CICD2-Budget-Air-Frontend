@@ -28,6 +28,16 @@ const Layout = () => {
                             <Link to="/flights" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700">
                                 <Plane className="h-4 w-4 mr-1" /> Flights
                             </Link>
+                            {user && (
+                                <Link to="/bookings" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+                                    <ShoppingBag className="h-4 w-4 mr-1" /> Bookings
+                                </Link>
+                            )}
+                            {user && user.role === 'admin' && (
+                                <Link to="/admin" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+                                    <Shield className="h-4 w-4 mr-1" /> Admin
+                                </Link>
+                            )}
                             {user ? (
                                 <>
                                     <span className="text-sm text-gray-600">

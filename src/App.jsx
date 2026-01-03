@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Flights from './pages/Flights';
+import Bookings from './pages/Bookings';
+import AdminPanel from './pages/AdminPanel';
 
 import Home from './pages/Home';
 
@@ -20,6 +22,8 @@ function App() {
                         <Route path="/register" element={<Register />} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/flights" element={<Flights />} />
+                        <Route path="/bookings" element={<Bookings />} />
+                        <Route path="/admin" element={<AdminPanel />} />
                     </Route>
                 </Routes>
             </BrowserRouter>
