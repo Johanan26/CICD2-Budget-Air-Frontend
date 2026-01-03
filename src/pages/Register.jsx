@@ -22,7 +22,6 @@ const Register = () => {
             const ageValue = parseInt(value) || 18;
             processedValue = ageValue;
         } else if (name === 'number') {
-            // Remove any non-digit characters and limit to 10 digits
             processedValue = value.replace(/\D/g, '').slice(0, 10);
         }
         
@@ -32,13 +31,11 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // Validate phone number is exactly 10 digits
         if (formData.number.length !== 10) {
             alert('Phone number must be exactly 10 digits');
             return;
         }
         
-        // Ensure age is a valid number
         const submitData = {
             ...formData,
             age: parseInt(formData.age) || 18
