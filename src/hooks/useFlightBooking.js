@@ -1,23 +1,25 @@
 import { useNavigate } from 'react-router-dom';
-import { useTask } from '../useTask';
 import { useAuth } from '../contexts/AuthContext';
+import { useTask } from '../useTask';
 
 export const useFlightBooking = (bookings, setBookings) => {
-    const { executeTask } = useTask();
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { executeTask } = useTask();
 
     const bookFlight = async (flight) => {
-        if (!user || !user.user_id) {
+        if (!user) {
             alert('Please login to book flights');
             navigate('/login');
             return;
         }
 
+        const flightId = flight.flight_id || flight.id;
         const existingBooking = bookings.find(b => 
-            (b.flight_id === flight.flight_id || b.flight_id === flight.id) && 
-            b.status === 'pending'
+            (b.flight_id === flightId) && 
+            (b.status === 'pending' || b.status === 'paid')
         );
+        
         if (existingBooking) {
             alert('This flight is already in your bookings!');
             navigate('/bookings');
@@ -40,34 +42,11 @@ export const useFlightBooking = (bookings, setBookings) => {
                 status: 'pending'
             };
 
-            let bookingResult;
-            try {
-                bookingResult = await executeTask('user', `api/users/${user.user_id}/bookings`, newBooking, 'POST');
-            } catch (userServiceErr) {
-                try {
-                    bookingResult = await executeTask('user', 'api/bookings', newBooking, 'POST');
-                } catch (altErr) {
-                    console.error('Error creating booking:', altErr);
-                    alert('Failed to create booking. Please try again.');
-                    return;
-                }
-            }
-
-            if (bookingResult) {
-                try {
-                    const updatedBookings = await executeTask('user', `api/users/${user.user_id}/bookings`, {}, 'GET');
-                    if (updatedBookings && Array.isArray(updatedBookings)) {
-                        setBookings(updatedBookings);
-                    } else {
-                        // Try alternative endpoint
-                        const altBookings = await executeTask('user', 'api/bookings', { user_id: user.user_id }, 'GET');
-                        if (altBookings && Array.isArray(altBookings)) {
-                            setBookings(altBookings);
-                        }
-                    }
-                } catch (refreshErr) {
-                    console.error('Error refreshing bookings:', refreshErr);
-                }
+            const createdBooking = await executeTask('flight', 'api/bookings', newBooking, 'POST');
+            
+            if (createdBooking) {
+                const updatedBookings = [...bookings, createdBooking];
+                setBookings(updatedBookings);
                 alert('Flight booked! Go to Bookings to complete payment.');
                 navigate('/bookings');
             }
