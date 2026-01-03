@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { createTask, pollTask } from './api';
 
 export const useTask = () => {
@@ -6,7 +6,7 @@ export const useTask = () => {
     const [error, setError] = useState(null);
     const [result, setResult] = useState(null);
 
-    const executeTask = async (service, route, params, method = 'POST') => {
+    const executeTask = useCallback(async (service, route, params, method = 'POST') => {
         setLoading(true);
         setError(null);
         setResult(null);
@@ -46,7 +46,7 @@ export const useTask = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     return { executeTask, loading, error, result };
 };
