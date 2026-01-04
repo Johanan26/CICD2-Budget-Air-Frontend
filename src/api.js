@@ -1,18 +1,12 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://task:8000';
+const API_BASE_URL = 'http://localhost:8000';
 
-const client = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-  },
-  timeout: 10000,
-});
+axios.defaults.headers.common['Content-Type'] = 'application/json';
+axios.defaults.headers.common['Accept'] = 'application/json';
 
 export const createTask = async (service, route, params, method = 'POST') => {
-  const response = await client.post('/create-task', {
+  const response = await axios.post(`${API_BASE_URL}/create-task`, {
     service,
     route,
     params,
@@ -22,23 +16,19 @@ export const createTask = async (service, route, params, method = 'POST') => {
 };
 
 export const getTaskStatus = async (taskId) => {
-  const response = await client.get(`/tasks/${taskId}`);
+  const response = await axios.get(`${API_BASE_URL}/tasks/${taskId}`);
   return response.data;
 };
 
 export const pollTask = async (taskId, interval = 1000, maxRetries = 30) => {
   let retries = 0;
-
   while (retries < maxRetries) {
     const data = await getTaskStatus(taskId);
-
-    if (data && (data.status === 'success' || data.status === 'failed')) {
+    if (data.status === 'success' || data.status === 'failed') {
       return data;
     }
-
     await new Promise((resolve) => setTimeout(resolve, interval));
     retries++;
   }
-
   throw new Error('Task polling timed out');
 };
