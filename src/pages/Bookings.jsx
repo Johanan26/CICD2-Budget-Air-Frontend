@@ -4,9 +4,30 @@ import { useAuth } from '../contexts/AuthContext';
 import { createTask, pollTask } from '../api';
 
 const formatMoney = (n) => {
-  if (typeof n === 'string' && n.startsWith('€')) return n;
+  if (typeof n === 'string' && n.trim().startsWith('€')) return n;
   const num = Number(n);
   return Number.isFinite(num) ? `€${num.toFixed(2)}` : '€0.00';
+};
+
+const pickFirst = (obj, keys) => {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== undefined && v !== null && String(v).trim() !== '') return v;
+  }
+  return null;
+};
+
+const formatDateTime = (value) => {
+  if (!value) return null;
+
+  const s = String(value).trim();
+
+  const iso = Date.parse(s);
+  if (!Number.isNaN(iso)) {
+    return new Date(iso).toLocaleString();
+  }
+
+  return s;
 };
 
 const Bookings = () => {
@@ -39,9 +60,7 @@ const Bookings = () => {
   };
 
   const markPaid = (id) => {
-    const next = bookings.map((b) =>
-      b.id === id ? { ...b, status: 'paid' } : b
-    );
+    const next = bookings.map((b) => (b.id === id ? { ...b, status: 'paid' } : b));
     saveBookings(next);
   };
 
@@ -96,44 +115,95 @@ const Bookings = () => {
     <div className="max-w-5xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4">My Bookings</h1>
 
-      {myBookings.map((b) => (
-        <div key={b.id} className="border rounded-lg p-4 mb-3">
-          <div className="font-semibold">
-            {b.origin} → {b.destination}
-          </div>
+      {myBookings.map((b) => {
+        const flightNumber = pickFirst(b, ['flight_number', 'flightNo', 'flight_id', 'flightId', 'id_flight']);
+        const seatClass = pickFirst(b, ['seat_class', 'seatClass', 'cabin_class', 'cabinClass', 'class', 'seat_type']);
+        const seatCount = pickFirst(b, ['seats', 'seat_count', 'seatCount', 'num_seats', 'numSeats', 'quantity']);
+        const depart = pickFirst(b, ['departure_time', 'departureTime', 'depart_time', 'departTime', 'datetime', 'dateTime', 'date', 'departure_date']);
+        const arrive = pickFirst(b, ['arrival_time', 'arrivalTime', 'arrive_time', 'arriveTime', 'arrival_date']);
 
-          <div className="text-sm">
-            Total: {formatMoney(b.total_price ?? b.price)}
-          </div>
+        const departLabel = formatDateTime(depart);
+        const arriveLabel = formatDateTime(arrive);
 
-          <div className="mt-2 flex gap-2 items-center">
-            {b.status !== 'paid' && (
+        const total = b.total_price ?? b.price;
+
+        return (
+          <div key={b.id} className="border rounded-lg p-4 mb-3">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="font-semibold text-lg">
+                  {b.origin} → {b.destination}
+                </div>
+
+                {flightNumber && (
+                  <div className="text-sm text-gray-700">
+                    Flight: <span className="font-medium">{String(flightNumber)}</span>
+                  </div>
+                )}
+
+                {departLabel && (
+                  <div className="text-sm text-gray-700">
+                    Departure: <span className="font-medium">{departLabel}</span>
+                  </div>
+                )}
+
+                {arriveLabel && (
+                  <div className="text-sm text-gray-700">
+                    Arrival: <span className="font-medium">{arriveLabel}</span>
+                  </div>
+                )}
+
+                {(seatClass || seatCount) && (
+                  <div className="text-sm text-gray-700">
+                    {seatClass ? (
+                      <>
+                        Class: <span className="font-medium">{String(seatClass)}</span>
+                      </>
+                    ) : null}
+                    {seatClass && seatCount ? <span className="mx-2">•</span> : null}
+                    {seatCount ? (
+                      <>
+                        Seats: <span className="font-medium">{String(seatCount)}</span>
+                      </>
+                    ) : null}
+                  </div>
+                )}
+
+                <div className="text-sm mt-2">
+                  Total: <span className="font-medium">{formatMoney(total)}</span>
+                </div>
+              </div>
+
+              {b.status === 'paid' && (
+                <span className="text-green-600 flex items-center gap-2 shrink-0">
+                  <CheckCircle size={16} /> Paid
+                </span>
+              )}
+            </div>
+
+            <div className="mt-3 flex gap-2 items-center">
+              {b.status !== 'paid' && (
+                <button
+                  onClick={() => {
+                    setSelectedBooking(b);
+                    setPayModalOpen(true);
+                  }}
+                  className="bg-blue-600 text-white px-3 py-2 rounded flex items-center gap-2"
+                >
+                  <CreditCard size={16} /> Pay
+                </button>
+              )}
+
               <button
-                onClick={() => {
-                  setSelectedBooking(b);
-                  setPayModalOpen(true);
-                }}
-                className="bg-blue-600 text-white px-3 py-2 rounded flex items-center gap-2"
+                onClick={() => deleteBooking(b.id)}
+                className="bg-gray-200 px-3 py-2 rounded flex items-center"
               >
-                <CreditCard size={16} /> Pay
+                <Trash2 size={16} />
               </button>
-            )}
-
-            <button
-              onClick={() => deleteBooking(b.id)}
-              className="bg-gray-200 px-3 py-2 rounded flex items-center"
-            >
-              <Trash2 size={16} />
-            </button>
-
-            {b.status === 'paid' && (
-              <span className="text-green-600 flex items-center gap-2">
-                <CheckCircle size={16} /> Paid
-              </span>
-            )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {payModalOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
