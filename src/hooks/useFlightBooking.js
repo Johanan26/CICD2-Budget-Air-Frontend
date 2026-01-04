@@ -3,7 +3,7 @@ import { useTask } from '../useTask';
 import { useAuth } from '../contexts/AuthContext';
 
 export const useFlightBooking = (bookings, setBookings) => {
-  const { executeTask } = useTask();
+  const { executeTask } = useTask(); // kept for future backend booking calls
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -46,7 +46,6 @@ export const useFlightBooking = (bookings, setBookings) => {
         seat_count: seatCount,
         unit_price: unitPrice,
         total_price: totalPrice,
-
         price: `€${totalPrice.toFixed(2)}`,
 
         status: 'pending',
