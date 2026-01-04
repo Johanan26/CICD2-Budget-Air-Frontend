@@ -1,81 +1,72 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useTask } from '../useTask';
+import { createTask, pollTask } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
-    const { executeTask, loading, error } = useTask();
-    const { login } = useAuth();
-    const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-        username: '',
-        password: ''
-    });
+  const { login } = useAuth();
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const result = await executeTask('user', 'api/users/login', formData);
-            if (result) {
-                login(result);
-                navigate('/dashboard');
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-    return (
-        <div className="max-w-md mx-auto bg-white p-8 border border-gray-200 shadow-sm rounded-lg">
-            <h2 className="text-2xl font-bold mb-6">Login</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <input
-                    type="text"
-                    name="username"
-                    placeholder="Username"
-                    className="w-full p-2 border border-gray-300 rounded"
-                    onChange={handleChange}
-                    value={formData.username}
-                    required
-                />
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    className="w-full p-2 border border-gray-300 rounded"
-                    onChange={handleChange}
-                    value={formData.password}
-                    required
-                />
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
-                >
-                    {loading ? 'Logging in...' : 'Login'}
-                </button>
-            </form>
+    try {
+      const task = await createTask(
+        'user',
+        '/login',
+        { username, password },
+        'POST'
+      );
 
-            {error && <div className="mt-4 p-3 bg-red-100 text-red-700 rounded border border-red-200">{error}</div>}
-            
-            <div className="mt-4 text-center">
-                <p className="text-sm text-gray-600">
-                    Don't have an account?{' '}
-                    <Link to="/register" className="text-blue-600 hover:text-blue-800 font-medium">
-                        Register here
-                    </Link>
-                </p>
-            </div>
-        </div>
-    );
+      const result = await pollTask(task.task_id);
+
+      if (result.status !== 'success') throw new Error('Login failed');
+
+      const data = result.data ?? result.result ?? result;
+
+      login(data);
+      window.location.href = '/';
+    } catch (err) {
+      alert('Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-xl mx-auto p-6">
+      <div className="bg-white border rounded-xl p-6">
+        <h1 className="text-2xl font-bold mb-4">Login</h1>
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Username"
+            className="w-full border rounded-lg p-3"
+          />
+          <input
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            type="password"
+            className="w-full border rounded-lg p-3"
+          />
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg"
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default Login;
-
-
-
