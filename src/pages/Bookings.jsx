@@ -66,7 +66,7 @@ const Bookings = () => {
 
       const taskId = await createTask(
         'payment',
-        'payments',
+        'process-payment',
         {
           user_id: selectedBooking.user_id,
           order_id: selectedBooking.id,
