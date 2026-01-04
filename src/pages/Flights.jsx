@@ -24,8 +24,8 @@ const Flights = () => {
   const handleSearch = async (e) => {
     e.preventDefault();
 
-    const o = origin.trim();
-    const d = destination.trim();
+    const o = origin.trim().toUpperCase();
+    const d = destination.trim().toUpperCase();
 
     if (!o || !d) return;
 
@@ -33,7 +33,7 @@ const Flights = () => {
     setSearchPerformed(true);
 
     try {
-      const task = await createTask('flight', '/flights/search', { origin: o, destination: d }, 'POST');
+      const task = await createTask('flight', 'api/flights/search', { origin: o, destination: d }, 'POST');
       const result = await pollTask(task.task_id);
 
       if (result.status === 'success') {
