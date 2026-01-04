@@ -18,7 +18,7 @@ const AdminUsers = () => {
     const loadUsers = async () => {
         setIsLoadingUsers(true);
         try {
-            const usersResult = await executeTask('user', '/api/users', {}, 'GET');
+            const usersResult = await executeTask('user', 'api/users', {}, 'GET');
             if (usersResult && Array.isArray(usersResult)) {
                 setUsers(usersResult);
             }
@@ -37,7 +37,7 @@ const AdminUsers = () => {
         setUpdatingUser(username);
         try {
             const roleUpdate = { role: newRole };
-            await executeTask('user', `/api/users/${username}/role`, roleUpdate, 'PATCH');
+            await executeTask('user', `api/users/${username}/role`, roleUpdate, 'PATCH');
             await loadUsers();
             alert('User role updated successfully!');
         } catch (err) {
@@ -97,4 +97,3 @@ const AdminUsers = () => {
 };
 
 export default AdminUsers;
-

@@ -24,7 +24,7 @@ export const createTask = async (service, route, params, method = 'POST') => {
   const taskId = normalizeTaskId(response.data);
   if (!taskId) throw new Error('Invalid create-task response');
 
-  return { task_id: taskId };
+  return taskId;
 };
 
 export const getTaskStatus = async (taskId) => {

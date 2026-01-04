@@ -3,8 +3,6 @@ import {
   CreditCard,
   Trash2,
   CheckCircle,
-  AlertTriangle,
-  X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { createTask, pollTask } from '../api';
@@ -64,13 +62,11 @@ const Bookings = () => {
       const amount =
         typeof selectedBooking.total_price === 'number'
           ? selectedBooking.total_price
-          : Number(
-              String(selectedBooking.price || '').replace(/[^\d.]/g, '')
-            );
+          : Number(String(selectedBooking.price || '').replace(/[^\d.]/g, ''));
 
-      const task = await createTask(
+      const taskId = await createTask(
         'payment',
-        '/payments',
+        'payments',
         {
           user_id: selectedBooking.user_id,
           order_id: selectedBooking.id,
@@ -82,7 +78,7 @@ const Bookings = () => {
         'POST'
       );
 
-      const result = await pollTask(task.task_id);
+      const result = await pollTask(taskId);
 
       if (result.status !== 'success') {
         throw new Error('Payment failed');
@@ -145,39 +141,52 @@ const Bookings = () => {
       ))}
 
       {payModalOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-80">
-            <h2 className="font-bold mb-3">Card details</h2>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold mb-4">Enter Card Details</h2>
 
             <input
-              placeholder="Name"
-              className="border p-2 w-full mb-2"
-              onChange={(e) =>
-                setCardForm({ ...cardForm, name: e.target.value })
-              }
+              className="border p-2 w-full mb-2 rounded"
+              placeholder="Name on card"
+              value={cardForm.name}
+              onChange={(e) => setCardForm({ ...cardForm, name: e.target.value })}
             />
             <input
+              className="border p-2 w-full mb-2 rounded"
               placeholder="Card number"
-              className="border p-2 w-full mb-2"
-              onChange={(e) =>
-                setCardForm({ ...cardForm, number: e.target.value })
-              }
+              value={cardForm.number}
+              onChange={(e) => setCardForm({ ...cardForm, number: e.target.value })}
             />
+            <div className="flex gap-2">
+              <input
+                className="border p-2 w-full mb-2 rounded"
+                placeholder="MM/YY"
+                value={cardForm.expiry}
+                onChange={(e) => setCardForm({ ...cardForm, expiry: e.target.value })}
+              />
+              <input
+                className="border p-2 w-full mb-2 rounded"
+                placeholder="CVC"
+                value={cardForm.cvc}
+                onChange={(e) => setCardForm({ ...cardForm, cvc: e.target.value })}
+              />
+            </div>
 
-            <button
-              onClick={submitPayment}
-              disabled={paying}
-              className="bg-blue-600 text-white w-full py-2 rounded"
-            >
-              Confirm
-            </button>
-
-            <button
-              onClick={() => setPayModalOpen(false)}
-              className="text-sm mt-2 w-full"
-            >
-              Cancel
-            </button>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={submitPayment}
+                disabled={paying}
+                className="bg-blue-600 text-white px-4 py-2 rounded w-full"
+              >
+                {paying ? 'Paying...' : 'Pay Now'}
+              </button>
+              <button
+                onClick={() => setPayModalOpen(false)}
+                className="bg-gray-200 px-4 py-2 rounded w-full"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
