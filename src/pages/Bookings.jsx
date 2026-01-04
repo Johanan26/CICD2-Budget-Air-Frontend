@@ -1,9 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  CreditCard,
-  Trash2,
-  CheckCircle,
-} from 'lucide-react';
+import { CreditCard, Trash2, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { createTask, pollTask } from '../api';
 
@@ -62,7 +58,7 @@ const Bookings = () => {
       const amount =
         typeof selectedBooking.total_price === 'number'
           ? selectedBooking.total_price
-          : Number(String(selectedBooking.price || '').replace(/[^\d.]/g, ''));
+          : Number(String(selectedBooking.total_price ?? selectedBooking.price ?? '').replace(/[^\d.]/g, ''));
 
       const taskId = await createTask(
         'payment',
@@ -70,15 +66,16 @@ const Bookings = () => {
         {
           amount,
           currency: 'EUR',
-          provider: 'card',
-          reference: String(selectedBooking.id)
+          provider: 'internal',
+          description: `Booking ${selectedBooking.id}`,
+          reference: String(selectedBooking.id),
         },
         'POST'
       );
 
       const result = await pollTask(taskId);
 
-      if (result.status !== 'success') {
+      if (!result || result.status !== 'success') {
         throw new Error('Payment failed');
       }
 
@@ -109,14 +106,14 @@ const Bookings = () => {
             Total: {formatMoney(b.total_price ?? b.price)}
           </div>
 
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex gap-2 items-center">
             {b.status !== 'paid' && (
               <button
                 onClick={() => {
                   setSelectedBooking(b);
                   setPayModalOpen(true);
                 }}
-                className="bg-blue-600 text-white px-3 py-1 rounded"
+                className="bg-blue-600 text-white px-3 py-2 rounded flex items-center gap-2"
               >
                 <CreditCard size={16} /> Pay
               </button>
@@ -124,13 +121,13 @@ const Bookings = () => {
 
             <button
               onClick={() => deleteBooking(b.id)}
-              className="bg-gray-200 px-3 py-1 rounded"
+              className="bg-gray-200 px-3 py-2 rounded flex items-center"
             >
               <Trash2 size={16} />
             </button>
 
             {b.status === 'paid' && (
-              <span className="text-green-600 flex items-center gap-1">
+              <span className="text-green-600 flex items-center gap-2">
                 <CheckCircle size={16} /> Paid
               </span>
             )}
