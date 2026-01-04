@@ -66,14 +66,12 @@ const Bookings = () => {
 
       const taskId = await createTask(
         'payment',
-        'process-payment',
+        'payments',
         {
-          user_id: selectedBooking.user_id,
-          order_id: selectedBooking.id,
           amount,
           currency: 'EUR',
           provider: 'card',
-          description: `Booking ${selectedBooking.id}`,
+          reference: String(selectedBooking.id)
         },
         'POST'
       );
