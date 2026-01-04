@@ -21,12 +21,6 @@ const Flights = () => {
 
   const { bookFlight } = useFlightBooking(bookings, setBookings);
 
-  const runTask = async (service, route, params, method) => {
-    const task = await createTask(service, route, params, method);
-    const result = await pollTask(task.task_id);
-    return result;
-  };
-
   const handleSearch = async (e) => {
     e.preventDefault();
 
@@ -39,42 +33,21 @@ const Flights = () => {
     setSearchPerformed(true);
 
     try {
-      let result;
+      const taskId = await createTask(
+        'flight',
+        'api/flights',
+        { origin: o, destination: d },
+        'GET'
+      );
 
-      try {
-        result = await runTask(
-          'flight',
-          `api/flights/search?origin=${encodeURIComponent(o)}&destination=${encodeURIComponent(d)}`,
-          {},
-          'GET'
-        );
-      } catch {
-        result = null;
+      const result = await pollTask(taskId);
+
+      if (result.status === 'success') {
+        const data = result.result ?? [];
+        setFlights(Array.isArray(data) ? data : []);
+      } else {
+        setFlights([]);
       }
-
-      if (!result || result.status !== 'success') {
-        const all = await runTask('flight', 'api/flights', {}, 'GET');
-
-        if (all.status !== 'success') {
-          setFlights([]);
-          return;
-        }
-
-        const list = all.data ?? all.result ?? [];
-        const filtered = Array.isArray(list)
-          ? list.filter(
-              (f) =>
-                String(f.origin || '').toUpperCase() === o &&
-                String(f.destination || '').toUpperCase() === d
-            )
-          : [];
-
-        setFlights(filtered);
-        return;
-      }
-
-      const data = result.data ?? result.result ?? [];
-      setFlights(Array.isArray(data) ? data : []);
     } catch {
       setFlights([]);
     } finally {
@@ -114,12 +87,7 @@ const Flights = () => {
         </form>
       </div>
 
-      <FlightsList
-        flights={flights}
-        loading={loading}
-        searchPerformed={searchPerformed}
-        onBook={handleBook}
-      />
+      <FlightsList flights={flights} loading={loading} searchPerformed={searchPerformed} onBook={handleBook} />
     </div>
   );
 };
