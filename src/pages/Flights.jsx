@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import FlightsList from '../components/FlightsList';
 import { useFlightBooking } from '../hooks/useFlightBooking';
 import { createTask, pollTask } from '../api';
@@ -21,29 +21,25 @@ const Flights = () => {
 
   const { bookFlight } = useFlightBooking(bookings, setBookings);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
+  const loadFlights = async (o, d) => {
+    const originVal = (o ?? '').trim().toUpperCase();
+    const destVal = (d ?? '').trim().toUpperCase();
 
-    const o = origin.trim().toUpperCase();
-    const d = destination.trim().toUpperCase();
-
-    if (!o || !d) return;
-
+    const hasSearch = originVal !== '' || destVal !== '';
+    setSearchPerformed(hasSearch);
     setLoading(true);
-    setSearchPerformed(true);
 
     try {
-      const taskId = await createTask(
-        'flight',
-        'api/flights',
-        { origin: o, destination: d },
-        'GET'
-      );
+      const route =
+        originVal && destVal
+          ? `api/flights?origin=${encodeURIComponent(originVal)}&destination=${encodeURIComponent(destVal)}`
+          : 'api/flights';
 
+      const taskId = await createTask('flight', route, {}, 'GET');
       const result = await pollTask(taskId);
 
       if (result.status === 'success') {
-        const data = result.result ?? [];
+        const data = result.result ?? result.data ?? [];
         setFlights(Array.isArray(data) ? data : []);
       } else {
         setFlights([]);
@@ -53,6 +49,15 @@ const Flights = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    loadFlights('', '');
+  }, []);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    await loadFlights(origin, destination);
   };
 
   const handleBook = (flight, selection) => {
@@ -66,12 +71,16 @@ const Flights = () => {
 
         <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <input
+            id="origin"
+            name="origin"
             value={origin}
             onChange={(e) => setOrigin(e.target.value)}
             placeholder="Origin (e.g. DUB)"
             className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <input
+            id="destination"
+            name="destination"
             value={destination}
             onChange={(e) => setDestination(e.target.value)}
             placeholder="Destination (e.g. LHR)"
