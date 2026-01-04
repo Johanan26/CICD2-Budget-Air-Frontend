@@ -8,7 +8,7 @@ const Flights = () => {
   const [destination, setDestination] = useState('');
   const [flights, setFlights] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [searchPerformed, setSearchPerformed] = useState(false);
+  const [searchPerformed, setSearchPerformed] = useState(true);
 
   const [bookings, setBookings] = useState(() => {
     try {
@@ -21,21 +21,12 @@ const Flights = () => {
 
   const { bookFlight } = useFlightBooking(bookings, setBookings);
 
-  const loadFlights = async (o, d) => {
-    const originVal = (o ?? '').trim().toUpperCase();
-    const destVal = (d ?? '').trim().toUpperCase();
-
-    const hasSearch = originVal !== '' || destVal !== '';
-    setSearchPerformed(hasSearch);
+  const loadAllFlights = async () => {
     setLoading(true);
+    setSearchPerformed(true);
 
     try {
-      const route =
-        originVal && destVal
-          ? `api/flights?origin=${encodeURIComponent(originVal)}&destination=${encodeURIComponent(destVal)}`
-          : 'api/flights';
-
-      const taskId = await createTask('flight', route, {}, 'GET');
+      const taskId = await createTask('flight', 'api/flights', {}, 'GET');
       const result = await pollTask(taskId);
 
       if (result.status === 'success') {
@@ -51,14 +42,46 @@ const Flights = () => {
     }
   };
 
-  useEffect(() => {
-    loadFlights('', '');
-  }, []);
-
   const handleSearch = async (e) => {
     e.preventDefault();
-    await loadFlights(origin, destination);
+
+    const o = origin.trim().toUpperCase();
+    const d = destination.trim().toUpperCase();
+
+    setLoading(true);
+    setSearchPerformed(true);
+
+    try {
+      const taskId = await createTask('flight', 'api/flights', {}, 'GET');
+      const result = await pollTask(taskId);
+
+      if (result.status === 'success') {
+        const data = result.result ?? result.data ?? [];
+        const list = Array.isArray(data) ? data : [];
+
+        const filtered =
+          o && d
+            ? list.filter(
+                (f) =>
+                  String(f.origin || '').toUpperCase() === o &&
+                  String(f.destination || '').toUpperCase() === d
+              )
+            : list;
+
+        setFlights(filtered);
+      } else {
+        setFlights([]);
+      }
+    } catch {
+      setFlights([]);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    loadAllFlights();
+  }, []);
 
   const handleBook = (flight, selection) => {
     bookFlight(flight, selection);
@@ -96,7 +119,12 @@ const Flights = () => {
         </form>
       </div>
 
-      <FlightsList flights={flights} loading={loading} searchPerformed={searchPerformed} onBook={handleBook} />
+      <FlightsList
+        flights={flights}
+        loading={loading}
+        searchPerformed={searchPerformed}
+        onBook={handleBook}
+      />
     </div>
   );
 };
