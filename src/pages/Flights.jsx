@@ -6,9 +6,13 @@ import { createTask, pollTask } from '../api';
 const Flights = () => {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
-  const [flights, setFlights] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searchPerformed, setSearchPerformed] = useState(true);
+
+  const [searchFlights, setSearchFlights] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchPerformed, setSearchPerformed] = useState(false);
+
+  const [allFlights, setAllFlights] = useState([]);
+  const [allLoading, setAllLoading] = useState(false);
 
   const [bookings, setBookings] = useState(() => {
     try {
@@ -22,25 +26,27 @@ const Flights = () => {
   const { bookFlight } = useFlightBooking(bookings, setBookings);
 
   const loadAllFlights = async () => {
-    setLoading(true);
-    setSearchPerformed(true);
-
+    setAllLoading(true);
     try {
       const taskId = await createTask('flight', 'api/flights', {}, 'GET');
       const result = await pollTask(taskId);
 
       if (result.status === 'success') {
         const data = result.result ?? result.data ?? [];
-        setFlights(Array.isArray(data) ? data : []);
+        setAllFlights(Array.isArray(data) ? data : []);
       } else {
-        setFlights([]);
+        setAllFlights([]);
       }
     } catch {
-      setFlights([]);
+      setAllFlights([]);
     } finally {
-      setLoading(false);
+      setAllLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadAllFlights();
+  }, []);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -48,40 +54,31 @@ const Flights = () => {
     const o = origin.trim().toUpperCase();
     const d = destination.trim().toUpperCase();
 
-    setLoading(true);
     setSearchPerformed(true);
+    setSearchLoading(true);
 
     try {
-      const taskId = await createTask('flight', 'api/flights', {}, 'GET');
+      const taskId = await createTask(
+        'flight',
+        `api/flights?origin=${encodeURIComponent(o)}&destination=${encodeURIComponent(d)}`,
+        {},
+        'GET'
+      );
+
       const result = await pollTask(taskId);
 
       if (result.status === 'success') {
         const data = result.result ?? result.data ?? [];
-        const list = Array.isArray(data) ? data : [];
-
-        const filtered =
-          o && d
-            ? list.filter(
-                (f) =>
-                  String(f.origin || '').toUpperCase() === o &&
-                  String(f.destination || '').toUpperCase() === d
-              )
-            : list;
-
-        setFlights(filtered);
+        setSearchFlights(Array.isArray(data) ? data : []);
       } else {
-        setFlights([]);
+        setSearchFlights([]);
       }
     } catch {
-      setFlights([]);
+      setSearchFlights([]);
     } finally {
-      setLoading(false);
+      setSearchLoading(false);
     }
   };
-
-  useEffect(() => {
-    loadAllFlights();
-  }, []);
 
   const handleBook = (flight, selection) => {
     bookFlight(flight, selection);
@@ -112,7 +109,7 @@ const Flights = () => {
           <button
             type="submit"
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition"
-            disabled={loading}
+            disabled={searchLoading}
           >
             Search
           </button>
@@ -120,11 +117,21 @@ const Flights = () => {
       </div>
 
       <FlightsList
-        flights={flights}
-        loading={loading}
+        flights={searchFlights}
+        loading={searchLoading}
         searchPerformed={searchPerformed}
         onBook={handleBook}
       />
+
+      <div className="mt-10">
+        <h2 className="text-xl font-bold mb-4">All Flights</h2>
+        <FlightsList
+          flights={allFlights}
+          loading={allLoading}
+          searchPerformed={true}
+          onBook={handleBook}
+        />
+      </div>
     </div>
   );
 };
