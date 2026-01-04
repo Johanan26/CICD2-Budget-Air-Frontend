@@ -4,6 +4,7 @@ import LoadingState from './shared/LoadingState';
 import EmptyState from './shared/EmptyState';
 
 const getEconomyUnitPrice = (flight) => {
+  // Backwards compatible: if the API only gives "price", treat it as economy.
   const p = flight?.economy_price ?? flight?.price ?? 0;
   const n = Number(p);
   return Number.isFinite(n) ? n : 0;
@@ -30,11 +31,11 @@ const FlightsList = ({
   searchPerformed,
   onBook,
 }) => {
-
   const [seatSelections, setSeatSelections] = useState({});
 
   const sortedFlights = useMemo(() => {
     if (!Array.isArray(flights)) return [];
+    // Keep current sorting logic (if any). If not, just return as-is.
     return flights;
   }, [flights]);
 
