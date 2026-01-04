@@ -4,7 +4,6 @@ import LoadingState from './shared/LoadingState';
 import EmptyState from './shared/EmptyState';
 
 const getEconomyUnitPrice = (flight) => {
-  // Backwards compatible: if the API only gives "price", treat it as economy.
   const p = flight?.economy_price ?? flight?.price ?? 0;
   const n = Number(p);
   return Number.isFinite(n) ? n : 0;
@@ -35,7 +34,6 @@ const FlightsList = ({
 
   const sortedFlights = useMemo(() => {
     if (!Array.isArray(flights)) return [];
-    // Keep current sorting logic (if any). If not, just return as-is.
     return flights;
   }, [flights]);
 
@@ -60,20 +58,16 @@ const FlightsList = ({
     return <LoadingState message="Searching flights..." />;
   }
 
-  if (searchPerformed && (!flights || flights.length === 0)) {
-    return (
+  if (sortedFlights.length === 0) {
+    return searchPerformed ? (
       <EmptyState
         title="No flights found"
         description="Try adjusting your search criteria and search again."
       />
-    );
-  }
-
-  if (!searchPerformed) {
-    return (
+    ) : (
       <EmptyState
-        title="Search for flights"
-        description="Use the search form above to find available flights."
+        title="No flights available"
+        description="There are no flights to display right now."
       />
     );
   }
@@ -134,6 +128,7 @@ const FlightsList = ({
                     <span>{flight.origin_airport ?? 'Airport'}</span>
                   </div>
                 </div>
+
                 <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-5">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
